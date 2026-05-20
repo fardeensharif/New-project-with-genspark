@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>NIGHTWATCH 2:00 AM — Live</title>
+<link rel="icon" href="/favicon.ico" />
+<link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+
+<!-- =================== VIDEO FEED =================== -->
+<div id="stage">
+  <canvas id="feed" width="768" height="432"></canvas>
+
+  <!-- AI dream / VHS glitch overlay -->
+  <div id="glitch"></div>
+  <div id="scanlines"></div>
+  <div id="vignette"></div>
+  <div id="static"></div>
+  <div id="redflash"></div>
+
+  <!-- =================== HUD =================== -->
+
+  <!-- Top left: LIVE + viewers -->
+  <div class="hud top-left">
+    <div class="live"><span class="dot"></span>LIVE</div>
+    <div class="viewers">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 5c-7 0-10 7-10 7s3 7 10 7 10-7 10-7-3-7-10-7zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8z"/></svg>
+      <span id="viewers">0</span>
+    </div>
+  </div>
+
+  <!-- Top right: Flashlight battery -->
+  <div class="hud top-right">
+    <div class="batt-label">FLASHLIGHT</div>
+    <div class="battery"><div id="batt-fill"></div></div>
+    <div class="batt-pct"><span id="batt-pct">100</span>%</div>
+  </div>
+
+  <!-- Bottom left: chat -->
+  <div class="hud bottom-left" id="chat">
+    <div class="chat-header">CHAT</div>
+    <div id="chat-log"></div>
+  </div>
+
+  <!-- Bottom center: subtitles -->
+  <div class="hud bottom-center">
+    <div id="subtitle"></div>
+  </div>
+
+  <!-- Bottom bar: heartbeat / sanity -->
+  <div class="hud bottom-bar">
+    <div class="sanity-label">SANITY</div>
+    <canvas id="ekg" width="600" height="40"></canvas>
+    <div class="bpm"><span id="bpm">72</span> BPM</div>
+  </div>
+
+  <!-- Idle / connection overlay -->
+  <div id="boot">
+    <div class="boot-card">
+      <div class="boot-title">NIGHTWATCH-CAM // CH-04</div>
+      <div class="boot-sub">2:03:14 AM &nbsp; • &nbsp; SIG: <span id="sig">OK</span></div>
+      <p class="boot-help">
+        <b>WASD</b> move &nbsp;·&nbsp; <b>Q/E</b> look up/down &nbsp;·&nbsp;
+        <b>Space</b> hold to talk &nbsp;·&nbsp; <b>F</b> flashlight &nbsp;·&nbsp;
+        <b>R</b> reset world
+      </p>
+      <button id="start">▶ GO LIVE</button>
+      <p class="boot-foot">
+        Backend: <span id="backend-info">…</span>
+      </p>
+    </div>
+  </div>
+</div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
