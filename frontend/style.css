@@ -1,0 +1,281 @@
+/* =========================================================
+   NIGHTWATCH-CAM — found-footage streamer HUD
+   ========================================================= */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  width: 100%;
+  height: 100%;
+  background: #000;
+  color: #ddd;
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  overflow: hidden;
+  user-select: none;
+}
+
+#stage {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: #000;
+}
+
+#feed {
+  width: 100vw;
+  height: 100vh;
+  object-fit: cover;
+  image-rendering: auto;
+  filter: contrast(1.05) saturate(0.85);
+  background: #050505;
+}
+
+/* ---------- Glitch / scanline / vignette overlays ---------- */
+
+#glitch, #scanlines, #vignette, #static, #redflash {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+#scanlines {
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(0,0,0,0.0) 0px,
+    rgba(0,0,0,0.0) 2px,
+    rgba(0,0,0,0.18) 3px,
+    rgba(0,0,0,0.0) 4px
+  );
+  mix-blend-mode: multiply;
+  opacity: 0.55;
+}
+
+#vignette {
+  background: radial-gradient(
+    ellipse at center,
+    rgba(0,0,0,0) 50%,
+    rgba(0,0,0,0.85) 100%
+  );
+}
+
+#static {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/><feColorMatrix values='0 0 0 0 1   0 0 0 0 1   0 0 0 0 1   0 0 0 0.6 0'/></filter><rect width='200' height='200' filter='url(%23n)' opacity='0.5'/></svg>");
+  opacity: 0.05;
+  mix-blend-mode: screen;
+  animation: staticshift 0.18s steps(2) infinite;
+}
+
+@keyframes staticshift {
+  0%   { transform: translate(0,0); }
+  50%  { transform: translate(-3px, 2px); }
+  100% { transform: translate(2px,-1px); }
+}
+
+/* Glitch: kicks in when sanity dips. Class added by JS. */
+#glitch.active {
+  background:
+    linear-gradient(transparent 0 49%, rgba(255,0,40,0.15) 49% 51%, transparent 51%),
+    linear-gradient(transparent 0 78%, rgba(0,255,200,0.12) 78% 80%, transparent 80%);
+  animation: glitchshake 0.08s infinite;
+}
+@keyframes glitchshake {
+  0%   { transform: translate(0,0); }
+  20%  { transform: translate(-4px, 1px); filter: hue-rotate(20deg); }
+  40%  { transform: translate(3px,-2px); filter: hue-rotate(-30deg); }
+  60%  { transform: translate(-2px, 2px); filter: hue-rotate(10deg); }
+  80%  { transform: translate(4px, 0); }
+  100% { transform: translate(0,0); }
+}
+
+#redflash {
+  background: radial-gradient(circle at 50% 50%, rgba(180,0,0,0.5), rgba(180,0,0,0) 70%);
+  opacity: 0;
+  transition: opacity 0.06s linear;
+}
+#redflash.fire { opacity: 1; }
+
+/* ---------- HUD generic ---------- */
+.hud {
+  position: absolute;
+  z-index: 10;
+  pointer-events: none;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.9);
+}
+
+/* Top left */
+.top-left  { top: 18px; left: 22px; display: flex; gap: 14px; align-items: center; }
+.live {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: rgba(0,0,0,0.55);
+  color: #fff; font-weight: 700; font-size: 13px;
+  padding: 5px 10px; border-radius: 4px;
+  letter-spacing: 1px;
+}
+.live .dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  background: #ff2030; box-shadow: 0 0 8px #ff2030;
+  animation: livepulse 1.2s ease-in-out infinite;
+}
+@keyframes livepulse {
+  0%,100% { opacity: 1; transform: scale(1); }
+  50%     { opacity: 0.4; transform: scale(0.85); }
+}
+
+.viewers {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(0,0,0,0.55);
+  color: #fff; font-size: 13px; font-weight: 600;
+  padding: 5px 10px; border-radius: 4px;
+}
+
+/* Top right: flashlight battery */
+.top-right {
+  top: 18px; right: 22px;
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(0,0,0,0.55);
+  padding: 5px 10px; border-radius: 4px;
+  font-size: 12px; font-weight: 600; color: #fff;
+}
+.batt-label { letter-spacing: 1px; }
+.battery {
+  position: relative;
+  width: 70px; height: 14px;
+  border: 2px solid #fff;
+  border-radius: 3px;
+  background: rgba(0,0,0,0.5);
+}
+.battery::after {
+  content: ""; position: absolute;
+  right: -5px; top: 3px;
+  width: 3px; height: 6px;
+  background: #fff;
+}
+#batt-fill {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(to right, #ff3030, #ffaa00, #66ff44);
+  background-size: 200% 100%;
+  background-position: 0% 0%;  /* shifted by JS */
+  transition: width 0.4s ease;
+}
+
+/* Bottom left chat */
+.bottom-left {
+  left: 22px; bottom: 90px;
+  width: 280px; max-height: 38vh;
+  background: rgba(0,0,0,0.55);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 12.5px;
+  display: flex; flex-direction: column;
+}
+.chat-header {
+  font-weight: 700; letter-spacing: 1px;
+  color: #b39ddb; margin-bottom: 6px;
+}
+#chat-log {
+  overflow: hidden;
+  display: flex; flex-direction: column;
+  gap: 3px;
+}
+#chat-log .msg { line-height: 1.25; word-wrap: break-word; }
+#chat-log .msg .u { font-weight: 700; margin-right: 5px; }
+
+/* Twitch-style user name colors */
+.u-c1 { color: #ff7878; } .u-c2 { color: #ffb84d; }
+.u-c3 { color: #4dd0e1; } .u-c4 { color: #aed581; }
+.u-c5 { color: #ba68c8; } .u-c6 { color: #f06292; }
+.u-c7 { color: #ffd54f; } .u-c8 { color: #90caf9; }
+
+/* Bottom center subtitles */
+.bottom-center {
+  left: 50%; transform: translateX(-50%);
+  bottom: 95px;
+  max-width: 70vw;
+  text-align: center;
+}
+#subtitle {
+  display: inline-block;
+  background: rgba(0,0,0,0.78);
+  color: #fff;
+  font-size: 18px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 3px;
+  min-height: 0;
+  opacity: 0;
+  transition: opacity 0.15s linear;
+}
+#subtitle.show { opacity: 1; }
+
+/* Bottom bar - heartbeat / sanity */
+.bottom-bar {
+  left: 0; right: 0; bottom: 0;
+  height: 70px;
+  background: linear-gradient(to top, rgba(0,0,0,0.85), rgba(0,0,0,0.0));
+  display: flex; align-items: center; gap: 14px;
+  padding: 0 24px;
+}
+.sanity-label {
+  color: #ff5060; font-weight: 800; letter-spacing: 2px; font-size: 12px;
+  text-shadow: 0 0 6px rgba(255,40,60,0.5);
+}
+#ekg { flex: 1; max-width: 700px; height: 40px; }
+.bpm {
+  color: #ff5060; font-weight: 700; font-size: 14px;
+  min-width: 80px; text-align: right;
+}
+
+/* Boot screen */
+#boot {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,0.8);
+  display: grid; place-items: center;
+  z-index: 50;
+  pointer-events: auto;
+}
+#boot.hidden { display: none; }
+.boot-card {
+  background: #0d0d10;
+  border: 1px solid #2a2a30;
+  padding: 28px 36px;
+  max-width: 480px;
+  border-radius: 6px;
+  text-align: center;
+  font-family: "Courier New", monospace;
+}
+.boot-title {
+  font-weight: 800; letter-spacing: 3px;
+  color: #ff5060; font-size: 18px;
+}
+.boot-sub {
+  margin-top: 6px; color: #aaa; font-size: 12px;
+}
+.boot-help {
+  margin: 18px 0 14px;
+  color: #ccc; font-size: 13px; line-height: 1.7;
+}
+#start {
+  background: #ff2030;
+  color: #fff;
+  border: none;
+  padding: 10px 28px;
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 2px;
+  cursor: pointer;
+  border-radius: 3px;
+}
+#start:hover { background: #ff4050; }
+.boot-foot { color: #555; font-size: 11px; margin-top: 14px; }
+
+/* Camera shake when sanity is critical (added/removed by JS) */
+#stage.shake { animation: camshake 0.12s linear infinite; }
+@keyframes camshake {
+  0%   { transform: translate(0,0); }
+  25%  { transform: translate(-3px, 2px); }
+  50%  { transform: translate(2px,-2px); }
+  75%  { transform: translate(-2px,-1px); }
+  100% { transform: translate(0,0); }
+}
